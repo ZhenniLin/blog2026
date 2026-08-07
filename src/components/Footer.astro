@@ -1,0 +1,81 @@
+---
+import { SITE } from '../config';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap">
+    <span class="blocks" aria-hidden="true">
+      <i></i><i></i><i></i>
+    </span>
+    <p class="visitor-count" id="busuanzi_container_site_uv">
+      已有 <span id="busuanzi_value_site_uv">--</span> 位访客来过
+    </p>
+    <p>© {year} {SITE.title} · Made with Astro</p>
+  </div>
+</footer>
+
+<script is:inline defer src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js"></script>
+
+<style>
+  .site-footer {
+    margin-top: 40px;
+    padding: 20px 0 28px;
+    border-top: 3px solid var(--c-line);
+    text-align: center;
+    font-size: 12px;
+    color: var(--c-muted);
+  }
+
+  p {
+    margin: 10px 0 0;
+  }
+
+  .visitor-count {
+    color: var(--c-mint);
+    font-family: var(--font-pixel);
+    font-size: 10px;
+  }
+
+  .blocks {
+    display: inline-flex;
+    gap: 5px;
+  }
+
+  .blocks i {
+    width: 10px;
+    height: 10px;
+    display: block;
+    animation: pop 1.2s steps(1, end) infinite;
+  }
+
+  .blocks i:nth-child(1) {
+    background: var(--c-orange);
+  }
+  .blocks i:nth-child(2) {
+    background: var(--c-amber);
+    animation-delay: 0.4s;
+  }
+  .blocks i:nth-child(3) {
+    background: var(--c-mint);
+    animation-delay: 0.8s;
+  }
+
+  /* 三个方块依次跳一下 */
+  @keyframes pop {
+    0%,
+    32.99% {
+      transform: translateY(-3px);
+    }
+    33%,
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blocks i {
+      animation: none;
+    }
+  }
+</style>

@@ -1,0 +1,28 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import PixelSprite from '../components/PixelSprite.astro';
+import type { SpriteName } from '../data/sprites';
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description?: string;
+    /** 标题旁边的像素小动画，可选：rabbit / coffee / star / disk / ghost / mail */
+    sprite?: SpriteName;
+  };
+}
+
+const { frontmatter } = Astro.props;
+---
+
+<BaseLayout title={frontmatter.title} description={frontmatter.description}>
+  <div class="wrap page">
+    <h1 class="page-title">
+      {frontmatter.sprite && <PixelSprite name={frontmatter.sprite} size={30} />}
+      {frontmatter.title}
+    </h1>
+    <div class="prose">
+      <slot />
+    </div>
+  </div>
+</BaseLayout>

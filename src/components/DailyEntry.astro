@@ -1,0 +1,35 @@
+---
+import { render } from 'astro:content';
+import { formatYMD } from '../utils/date';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  entry: CollectionEntry<'daily'>;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+---
+
+<article class="daily-item">
+  <time class="daily-date" datetime={entry.data.date.toISOString()}>
+    {formatYMD(entry.data.date)}
+  </time>
+
+  <div class="daily-text">
+    <Content />
+  </div>
+
+  {
+    entry.data.image && (
+      <img
+        class:list={['daily-photo', { 'daily-photo--natural': !entry.data.image.endsWith('.svg') }]}
+        src={entry.data.image}
+        alt={entry.data.imageAlt}
+        loading="lazy"
+        width={entry.data.imageWidth}
+        height={entry.data.imageHeight}
+      />
+    )
+  }
+</article>

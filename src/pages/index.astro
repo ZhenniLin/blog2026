@@ -1,0 +1,98 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import SectionHead from '../components/SectionHead.astro';
+import PostRow from '../components/PostRow.astro';
+import DailyEntry from '../components/DailyEntry.astro';
+import PixelSprite from '../components/PixelSprite.astro';
+import { SITE } from '../config';
+import { byDateDesc } from '../utils/date';
+
+const articles = (await getCollection('articles', ({ data }) => !data.draft))
+  .sort(byDateDesc);
+
+// 首页只展示明确标记为 featured 的文章
+const featured = articles
+  .filter((article) => article.data.featured)
+  .slice(0, SITE.featuredArticles);
+
+const daily = (await getCollection('daily', ({ data }) => !data.draft))
+  .sort(byDateDesc)
+  .slice(0, SITE.featuredDaily);
+---
+
+<BaseLayout>
+  <section class="wrap page hero">
+    <div class="hero-text">
+      <h1 class="hero-title">
+        {SITE.heroTitle}
+        <span class="caret" aria-hidden="true"></span>
+      </h1>
+      <p class="hero-sub">{SITE.heroSubtitle}</p>
+    </div>
+    <div class="hero-pet" title="戳一下">
+      <PixelSprite name="rabbit" size={64} motion="bob" />
+    </div>
+  </section>
+
+  <div class="wrap"><hr class="pixel-rule" /></div>
+
+  <section class="wrap">
+    <SectionHead sprite="star" title="精选文章" />
+    {
+      featured.map((post) => (
+        <PostRow
+          href={`/articles/${post.id}/`}
+          title={post.data.title}
+          date={post.data.date}
+        />
+      ))
+    }
+    {featured.length === 0 && <p class="empty">还没有文章，敬请期待 :)</p>}
+
+    <a class="more-link" href="/articles/">
+      <span class="bracket">【</span>查看全部文章 →<span class="bracket">】</span>
+    </a>
+  </section>
+
+  <div class="wrap"><hr class="pixel-rule" /></div>
+
+  <section class="wrap last-section">
+    <SectionHead sprite="coffee" title="日常记录" />
+    {daily.map((entry) => <DailyEntry entry={entry} />)}
+    {daily.length === 0 && <p class="empty">日常还没开始记录 :)</p>}
+
+    <a class="more-link" href="/daily/">
+      <span class="bracket">【</span>查看更多日常 →<span class="bracket">】</span>
+    </a>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding-bottom: 8px;
+  }
+
+  .hero-text {
+    min-width: 0;
+  }
+
+  .last-section {
+    padding-bottom: 56px;
+  }
+
+  .hero-pet {
+    flex: none;
+  }
+
+  @media (max-width: 600px) {
+    .hero-pet :global(svg) {
+      width: 48px;
+      height: 48px;
+    }
+  }
+</style>

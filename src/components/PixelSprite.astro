@@ -1,0 +1,158 @@
+---
+import { PALETTE, SPRITES, type SpriteName } from '../data/sprites';
+import { toRuns } from '../utils/pixel';
+
+interface Props {
+  name: SpriteName;
+  size?: number;
+  /** bob = 上下浮动，jump = 鼠标移上去会跳一下 */
+  motion?: 'none' | 'bob' | 'jump';
+  class?: string;
+}
+
+const { name, size = 40, motion = 'none', class: className } = Astro.props;
+
+const sprite = SPRITES[name];
+const frameCount = sprite.frames.length;
+const frames = sprite.frames.map((rows) => toRuns(rows, PALETTE));
+---
+
+<svg
+  class:list={['sprite', `motion-${motion}`, className]}
+  data-frames={frameCount}
+  width={size}
+  height={size}
+  viewBox="0 0 16 16"
+  shape-rendering="crispEdges"
+  aria-hidden="true"
+  focusable="false"
+  style={`--dur:${sprite.duration}ms`}
+>
+  {
+    frames.map((runs, i) => (
+      <g
+        class="frame"
+        style={`animation-delay:${-Math.round((i * sprite.duration) / frameCount)}ms`}
+      >
+        {runs.map((run) => (
+          <rect x={run.x} y={run.y} width={run.w} height="1" fill={run.fill} />
+        ))}
+      </g>
+    ))
+  }
+</svg>
+
+<style>
+  .sprite {
+    display: block;
+    flex: none;
+    overflow: visible;
+  }
+
+  .frame {
+    opacity: 0;
+    animation: frames-2 var(--dur) steps(1, end) infinite;
+  }
+
+  /* 逐帧切换：每帧只在自己那一段时间里可见 */
+  .sprite[data-frames='2'] .frame {
+    animation-name: frames-2;
+  }
+  .sprite[data-frames='3'] .frame {
+    animation-name: frames-3;
+  }
+  .sprite[data-frames='4'] .frame {
+    animation-name: frames-4;
+  }
+
+  @keyframes frames-2 {
+    0%,
+    49.99% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes frames-3 {
+    0%,
+    33.32% {
+      opacity: 1;
+    }
+    33.33%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  @keyframes frames-4 {
+    0%,
+    24.99% {
+      opacity: 1;
+    }
+    25%,
+    100% {
+      opacity: 0;
+    }
+  }
+
+  /* 整体上下浮动，用 steps 保持像素感（不做亚像素位移） */
+  .motion-bob {
+    animation: bob 1.2s steps(1, end) infinite;
+  }
+
+  @keyframes bob {
+    0%,
+    49.99% {
+      transform: translateY(0);
+    }
+    50%,
+    100% {
+      transform: translateY(-3px);
+    }
+  }
+
+  .motion-jump {
+    cursor: pointer;
+  }
+
+  /* 悬停时改播「跳一下」，比常驻的浮动优先级高 */
+  .motion-jump:hover,
+  .motion-bob:hover {
+    animation: jump 0.45s steps(1, end) 1;
+  }
+
+  @keyframes jump {
+    0% {
+      transform: translateY(0);
+    }
+    25% {
+      transform: translateY(-6px);
+    }
+    50% {
+      transform: translateY(-9px);
+    }
+    75% {
+      transform: translateY(-6px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .frame {
+      animation: none;
+    }
+    .frame:first-of-type {
+      opacity: 1;
+    }
+    .motion-bob,
+    .motion-jump:hover,
+    .motion-bob:hover {
+      animation: none;
+    }
+  }
+</style>

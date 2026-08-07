@@ -1,0 +1,16 @@
+---
+import PixelSprite from './PixelSprite.astro';
+import type { SpriteName } from '../data/sprites';
+
+interface Props {
+  sprite: SpriteName;
+  title: string;
+}
+
+const { sprite, title } = Astro.props;
+---
+
+<div class="section-head">
+  <PixelSprite name={sprite} size={26} />
+  <h2>{title}</h2>
+</div>

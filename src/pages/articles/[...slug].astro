@@ -1,0 +1,87 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatYMD } from '../../utils/date';
+
+export const getStaticPaths = (async () => {
+  const articles = await getCollection('articles', ({ data }) => !data.draft);
+  return articles.map((post) => ({
+    params: { slug: post.id },
+    props: { post },
+  }));
+}) satisfies GetStaticPaths;
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+---
+
+<BaseLayout title={post.data.title} description={post.data.summary}>
+  <article class="wrap page">
+    <a class="back" href="/articles/">◀ 返回文章列表</a>
+
+    <h1 class="post-title">{post.data.title}</h1>
+
+    <p class="meta">
+      <time datetime={post.data.date.toISOString()}>
+        {formatYMD(post.data.date)}
+      </time>
+      <span class="base">base地：{post.data.base}</span>
+      <span class="tag">{post.data.category}</span>
+    </p>
+
+    <hr class="pixel-rule" />
+
+    <div class="prose">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .back {
+    display: inline-block;
+    margin-bottom: 28px;
+    font-size: 13px;
+    color: var(--c-muted);
+  }
+
+  .back:hover {
+    color: var(--c-orange);
+  }
+
+  .post-title {
+    margin: 0 0 14px;
+    font-size: 22px;
+    line-height: 1.5;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+    margin: 0;
+    font-size: 12px;
+    color: var(--c-muted);
+    font-family: var(--font-pixel);
+  }
+
+  .tag {
+    padding: 4px 10px;
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--c-orange);
+    background: var(--c-panel);
+    border: 2px solid var(--c-amber);
+  }
+
+  .base {
+    color: var(--c-mint);
+  }
+
+  .pixel-rule {
+    margin-top: 24px;
+    margin-bottom: 32px;
+  }
+</style>

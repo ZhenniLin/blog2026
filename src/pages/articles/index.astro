@@ -1,0 +1,76 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostRow from '../../components/PostRow.astro';
+import PixelSprite from '../../components/PixelSprite.astro';
+import { byDateDesc } from '../../utils/date';
+
+const articles = (await getCollection('articles', ({ data }) => !data.draft))
+  .sort(byDateDesc);
+
+const categories = ['全部', ...new Set(articles.map((a) => a.data.category))];
+---
+
+<BaseLayout title="文章" description="Jennie 的全部文章">
+  <div class="wrap page">
+    <h1 class="page-title">
+      <PixelSprite name="disk" size={30} />
+      文章
+    </h1>
+
+    <ul class="filters" id="filters">
+      {
+        categories.map((category, i) => (
+          <li>
+            <button
+              class="filter-btn"
+              type="button"
+              data-filter={category}
+              aria-pressed={i === 0 ? 'true' : 'false'}
+            >
+              {category}
+            </button>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div id="article-list">
+      {
+        articles.map((post) => (
+          <PostRow
+            href={`/articles/${post.id}/`}
+            title={post.data.title}
+            date={post.data.date}
+            category={post.data.category}
+          />
+        ))
+      }
+    </div>
+
+    {articles.length === 0 && <p class="empty">还没有文章，敬请期待 :)</p>}
+  </div>
+</BaseLayout>
+
+<script>
+  const filters = document.getElementById('filters');
+  const rows = document.querySelectorAll<HTMLElement>('#article-list [data-category]');
+
+  filters?.addEventListener('click', (event) => {
+    const button = (event.target as HTMLElement).closest<HTMLButtonElement>('.filter-btn');
+    if (!button) return;
+
+    const active = button.dataset.filter;
+
+    filters
+      .querySelectorAll<HTMLButtonElement>('.filter-btn')
+      .forEach((btn) =>
+        btn.setAttribute('aria-pressed', String(btn === button)),
+      );
+
+    rows.forEach((row) => {
+      const match = active === '全部' || row.dataset.category === active;
+      row.style.display = match ? '' : 'none';
+    });
+  });
+</script>

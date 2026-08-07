@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PixelSprite from '../components/PixelSprite.astro';
+---
+
+<BaseLayout title="404">
+  <div class="wrap page center">
+    <div class="ghost">
+      <PixelSprite name="ghost" size={72} motion="bob" />
+    </div>
+    <p class="code">404</p>
+    <p class="msg">这里什么都没有，要不回首页看看？</p>
+    <a class="more-link" href="/">
+      <span class="bracket">【</span>回到首页 →<span class="bracket">】</span>
+    </a>
+  </div>
+</BaseLayout>
+
+<style>
+  .center {
+    text-align: center;
+    padding-top: 72px;
+  }
+
+  .ghost {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+
+  .code {
+    margin: 0;
+    font-family: var(--font-pixel);
+    font-size: 38px;
+    color: var(--c-orange);
+  }
+
+  .msg {
+    margin: 16px 0 20px;
+    color: var(--c-muted);
+  }
+</style>
