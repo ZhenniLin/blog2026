@@ -5,7 +5,9 @@ description: AI ｜ 人文艺术 ｜ 跨境电商 base上海中
 sprite: mail
 ---
 
-互联网大模型 ｜ 人文艺术 ｜ 跨境电商 base上海中
+互联网大模型 ｜ 人文艺术 ｜ 自由职业 
+
+base:上海
 
 微信号：YingLin_isly（备注：网站 + 来意）
 
