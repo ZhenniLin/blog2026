@@ -8,14 +8,59 @@ const year = new Date().getFullYear();
     <span class="blocks" aria-hidden="true">
       <i></i><i></i><i></i>
     </span>
-    <p class="visitor-count" id="busuanzi_container_site_uv">
-      已有 <span id="busuanzi_value_site_uv">--</span> 位访客来过
+    <p class="visitor-count">
+      已有 <span id="visitor-count" aria-live="polite">统计中…</span> 位访客来过
     </p>
     <p>© {year} {SITE.title} · Made with Astro</p>
   </div>
 </footer>
 
-<script is:inline defer src="https://cdn.busuanzi.cc/busuanzi/3.6.9/busuanzi.min.js"></script>
+<script is:inline>
+  (() => {
+    const countElement = document.getElementById('visitor-count');
+    if (!countElement) return;
+
+    const counterUrl = 'https://api.counterapi.dev/v1/zhenni-blog2026/site-visitors';
+    const visitorMarker = 'blog2026-visitor-counted-at-v1';
+    const visitorWindow = 24 * 60 * 60 * 1000;
+    let requestUrl = `${counterUrl}/`;
+    let markedThisVisit = false;
+
+    try {
+      const lastCountedAt = Number(localStorage.getItem(visitorMarker));
+      const canCountAgain = !Number.isFinite(lastCountedAt)
+        || Date.now() - lastCountedAt >= visitorWindow;
+
+      if (canCountAgain) {
+        localStorage.setItem(visitorMarker, String(Date.now()));
+        requestUrl = `${counterUrl}/up`;
+        markedThisVisit = true;
+      }
+    } catch {
+      // 无法使用本地存储时只读取计数，避免每次刷新都重复增加。
+    }
+
+    fetch(requestUrl, { cache: 'no-store' })
+      .then((response) => {
+        if (!response.ok) throw new Error(`Counter request failed: ${response.status}`);
+        return response.json();
+      })
+      .then((data) => {
+        if (typeof data.count !== 'number') throw new Error('Counter response is invalid');
+        countElement.textContent = data.count.toLocaleString('zh-CN');
+      })
+      .catch(() => {
+        if (markedThisVisit) {
+          try {
+            localStorage.removeItem(visitorMarker);
+          } catch {
+            // 本地存储不可用时无需继续处理。
+          }
+        }
+        countElement.textContent = '暂不可用';
+      });
+  })();
+</script>
 
 <style>
   .site-footer {
