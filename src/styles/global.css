@@ -26,6 +26,9 @@
   --font-body: 'Fusion Pixel 12px Prop zh_hans', 'Zpix', ui-monospace,
     'Cascadia Mono', 'Sarasa Mono SC', 'Microsoft YaHei', 'PingFang SC',
     monospace;
+  /* 长文使用平滑的系统黑体，像素字体保留在页面装饰与标题中 */
+  --font-reading: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC',
+    system-ui, sans-serif;
 
   /* 布局：正文列比较窄，读起来更舒服 */
   --w-page: 680px;
@@ -357,7 +360,16 @@ h4 {
 
 /* ---------- 正文（Markdown） ---------- */
 .prose {
+  font-family: var(--font-reading);
   font-size: 15px;
+  line-height: 1.9;
+  overflow-wrap: break-word;
+}
+
+.prose h2,
+.prose h3,
+.prose h4 {
+  font-weight: 600;
 }
 
 .prose h2 {
@@ -415,8 +427,8 @@ h4 {
 }
 
 .prose code {
-  font-family: var(--font-pixel);
-  font-size: 0.72em;
+  font-family: 'Cascadia Mono', Consolas, ui-monospace, monospace;
+  font-size: 0.85em;
   background: var(--c-panel);
   border: 2px solid var(--c-line);
   padding: 2px 6px;
@@ -435,7 +447,7 @@ h4 {
 .prose pre code {
   border: 0;
   padding: 0;
-  font-size: 0.8em;
+  font-size: 0.85em;
   background: transparent;
   color: var(--c-ink);
 }
