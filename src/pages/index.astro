@@ -6,10 +6,10 @@ import PostRow from '../components/PostRow.astro';
 import DailyEntry from '../components/DailyEntry.astro';
 import PixelSprite from '../components/PixelSprite.astro';
 import { SITE } from '../config';
-import { byDateDesc } from '../utils/date';
+import { byDateDesc, byUpdatedDesc } from '../utils/date';
 
 const articles = (await getCollection('articles', ({ data }) => !data.draft))
-  .sort(byDateDesc);
+  .sort(byUpdatedDesc);
 
 // 首页只展示明确标记为 featured 的文章
 const featured = articles

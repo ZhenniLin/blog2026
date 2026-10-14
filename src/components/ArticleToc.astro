@@ -1,0 +1,238 @@
+---
+interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+interface Node extends Heading {
+  children: Node[];
+}
+interface Props { headings: Heading[] }
+
+const roots: Node[] = [];
+const stack: Node[] = [];
+for (const heading of Astro.props.headings) {
+  if (heading.depth < 2 || heading.depth > 4) continue;
+  const node: Node = { ...heading, children: [] };
+  while (stack.length && stack[stack.length - 1].depth >= node.depth) stack.pop();
+  if (stack.length) stack[stack.length - 1].children.push(node);
+  else roots.push(node);
+  stack.push(node);
+}
+---
+
+{roots.length > 0 && (
+  <aside class="article-toc pixel-box" aria-label="文章目录">
+    <details open>
+      <summary><span class="toc-label">文章目录</span></summary>
+      <button class="toc-collapse" type="button" aria-label="收起目录">收起 ↑</button>
+      <nav aria-label="章节导航">
+        <ul role="list">
+          {roots.map((section) => (
+            <li>
+              <a href={`#${section.slug}`}>{section.text}</a>
+              {section.children.length > 0 && (
+                <ul role="list">
+                  {section.children.map((child) => (
+                    <li>
+                      <a href={`#${child.slug}`}>{child.text}</a>
+                      {child.children.length > 0 && (
+                        <ul role="list">
+                          {child.children.map((leaf) => (
+                            <li><a href={`#${leaf.slug}`}>{leaf.text}</a></li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <button class="toc-resize" type="button" aria-label="调整目录高度" title="向下拖动增加高度，也可用上下方向键调整">
+        <span aria-hidden="true"></span>
+      </button>
+    </details>
+  </aside>
+)}
+
+<script>
+  const compact = window.matchMedia('(max-width: 999px)');
+  const syncToc = () => {
+    document.querySelectorAll<HTMLDetailsElement>('.article-toc details').forEach((details) => {
+      details.open = !compact.matches;
+    });
+  };
+  syncToc();
+  compact.addEventListener('change', syncToc);
+
+  document.querySelectorAll<HTMLElement>('.article-toc').forEach((toc) => {
+    const details = toc.querySelector<HTMLDetailsElement>('details');
+    toc.querySelector<HTMLButtonElement>('.toc-collapse')?.addEventListener('click', () => {
+      if (!details) return;
+      details.open = false;
+      details.querySelector('summary')?.focus();
+    });
+    const nav = toc.querySelector<HTMLElement>('nav');
+    const handle = toc.querySelector<HTMLButtonElement>('.toc-resize');
+    if (!nav || !handle) return;
+    let pointerId: number | null = null;
+    let startY = 0;
+    let startHeight = 0;
+    const resize = (height: number) => {
+      const maximum = Number.parseFloat(getComputedStyle(nav).maxHeight);
+      const minimum = Number.parseFloat(getComputedStyle(nav).minHeight);
+      nav.style.height = `${Math.max(minimum, Math.min(maximum, height))}px`;
+    };
+    handle.addEventListener('pointerdown', (event) => {
+      if (event.button !== 0) return;
+      pointerId = event.pointerId;
+      startY = event.clientY;
+      startHeight = nav.getBoundingClientRect().height;
+      handle.setPointerCapture(event.pointerId);
+      event.preventDefault();
+    });
+    handle.addEventListener('pointermove', (event) => {
+      if (event.pointerId === pointerId) resize(startHeight + event.clientY - startY);
+    });
+    const stopResize = () => { pointerId = null; };
+    handle.addEventListener('lostpointercapture', stopResize);
+    handle.addEventListener('pointerup', stopResize);
+    handle.addEventListener('pointercancel', stopResize);
+    handle.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      event.preventDefault();
+      resize(nav.getBoundingClientRect().height + (event.key === 'ArrowDown' ? 24 : -24));
+    });
+  });
+</script>
+
+<style>
+  .article-toc {
+    position: fixed;
+    z-index: 10;
+    top: min(240px, 26vh);
+    right: calc(50% + var(--w-page) / 2 + 64px);
+    width: 210px;
+    padding: 14px;
+    font-family: var(--font-reading);
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  summary {
+    cursor: pointer;
+    color: var(--c-orange-dark);
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .toc-collapse {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 3px 6px;
+    font: inherit;
+    color: var(--c-orange-dark);
+    border: 1px solid var(--c-line);
+    background: var(--c-panel);
+    cursor: pointer;
+  }
+  .toc-collapse:hover { background: var(--c-hover); border-color: var(--c-orange); }
+  nav {
+    height: 280px;
+    min-height: min(140px, max(80px, calc(100dvh - min(240px, 26vh) - 100px)));
+    max-height: max(80px, calc(100dvh - min(240px, 26vh) - 100px));
+    overflow-y: auto;
+    margin-top: 10px;
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+  }
+  .toc-resize {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 18px;
+    margin-top: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: ns-resize;
+    touch-action: none;
+  }
+  .toc-resize span {
+    width: 32px;
+    height: 5px;
+    border-top: 2px solid var(--c-line);
+    border-bottom: 2px solid var(--c-line);
+  }
+  .toc-resize:hover span { border-color: var(--c-orange); }
+  ul, li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  li::marker { content: ''; }
+  ul ul {
+    margin: 3px 0 8px 10px;
+    padding-left: 10px;
+    border-left: 2px solid var(--c-line);
+  }
+  a {
+    display: block;
+    padding: 5px 2px;
+    color: var(--c-orange-dark);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  a:hover, a:focus-visible {
+    background: var(--c-hover);
+    color: var(--c-orange-dark);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  @media (min-width: 1000px) and (max-width: 1199px) {
+    .article-toc {
+      right: calc(50% + var(--w-page) / 2 + 24px);
+      width: calc(50vw - var(--w-page) / 2 - 32px);
+      padding: 10px;
+    }
+  }
+  @media (max-width: 999px) {
+    .article-toc {
+      left: 8px;
+      right: auto;
+      width: 46px;
+      padding: 10px 8px;
+    }
+    summary {
+      display: flex;
+      justify-content: center;
+      list-style: none;
+    }
+    .toc-label {
+      writing-mode: vertical-rl;
+      letter-spacing: 0.35em;
+      line-height: 1;
+    }
+    summary::-webkit-details-marker { display: none; }
+    nav { display: none; }
+    .article-toc:has(details[open]) {
+      width: min(230px, calc(100vw - 32px));
+      padding: 14px;
+    }
+    .article-toc:has(details[open]) summary {
+      justify-content: flex-start;
+      padding-right: 60px;
+    }
+    .article-toc:has(details[open]) .toc-label {
+      writing-mode: horizontal-tb;
+      letter-spacing: normal;
+      line-height: 1.65;
+    }
+    .article-toc:has(details[open]) .toc-collapse { display: block; }
+    .article-toc:has(details[open]) nav { display: block; }
+  }
+</style>

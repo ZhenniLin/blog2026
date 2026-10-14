@@ -3,10 +3,10 @@ import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostRow from '../../components/PostRow.astro';
 import PixelSprite from '../../components/PixelSprite.astro';
-import { byDateDesc } from '../../utils/date';
+import { byUpdatedDesc } from '../../utils/date';
 
 const articles = (await getCollection('articles', ({ data }) => !data.draft))
-  .sort(byDateDesc);
+  .sort(byUpdatedDesc);
 
 const categories = ['全部', ...new Set(articles.map((a) => a.data.category))];
 ---

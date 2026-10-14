@@ -2,6 +2,7 @@
 import { getCollection, render } from 'astro:content';
 import type { GetStaticPaths } from 'astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ArticleToc from '../../components/ArticleToc.astro';
 import { formatYMD } from '../../utils/date';
 
 export const getStaticPaths = (async () => {
@@ -13,10 +14,12 @@ export const getStaticPaths = (async () => {
 }) satisfies GetStaticPaths;
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+
 ---
 
 <BaseLayout title={post.data.title} description={post.data.summary}>
+  <ArticleToc headings={headings} />
   <article class="wrap page">
     <a class="back" href="/articles/">◀ 返回文章列表</a>
 
@@ -39,6 +42,10 @@ const { Content } = await render(post);
 </BaseLayout>
 
 <style>
+  .prose :global(:is(h2, h3, h4)) {
+    scroll-margin-top: 80px;
+  }
+
   .back {
     display: inline-block;
     margin-bottom: 28px;

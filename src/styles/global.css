@@ -370,17 +370,40 @@ h4 {
 .prose h3,
 .prose h4 {
   font-weight: 600;
+  line-height: 1.5;
+  color: var(--c-orange-dark);
 }
 
 .prose h2 {
   margin: 1.6em 0 0.6em;
-  font-size: 1.25em;
-  color: var(--c-orange);
+  font-size: 21px;
 }
 
 .prose h3 {
   margin: 1.4em 0 0.5em;
-  font-size: 1.1em;
+  font-size: 18px;
+}
+
+.prose h4 {
+  margin: 1.3em 0 0.5em;
+  font-size: 16px;
+}
+
+.prose :is(h2, h3, h4) strong {
+  color: inherit;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.2em;
+  text-decoration-skip-ink: auto;
+}
+
+.prose a:hover,
+.prose a:focus-visible {
+  color: var(--c-orange-dark);
+  text-decoration-thickness: 2px;
 }
 
 .prose p {

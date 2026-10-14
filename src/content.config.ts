@@ -7,6 +7,8 @@ const articles = defineCollection({
   schema: z.object({
     title: z.string(),
     date: z.coerce.date(),
+    // 最近内容更新时间，决定文章列表与首页精选的顺序
+    updatedAt: z.coerce.date().optional(),
     // 文章创作或生活所在的 base 地
     base: z.string(),
     // 分类会自动变成「文章」页面顶部的筛选标签
