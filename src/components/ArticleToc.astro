@@ -70,6 +70,31 @@ for (const heading of Astro.props.headings) {
 
   document.querySelectorAll<HTMLElement>('.article-toc').forEach((toc) => {
     const details = toc.querySelector<HTMLDetailsElement>('details');
+    let openedByHover = false;
+    toc.addEventListener('pointerenter', (event) => {
+      if (!compact.matches || event.pointerType !== 'mouse' || !details) return;
+      openedByHover = !details.open;
+      details.open = true;
+    });
+    toc.addEventListener('pointerleave', (event) => {
+      if (!compact.matches || event.pointerType !== 'mouse' || !details) return;
+      openedByHover = false;
+      details.open = false;
+    });
+    details?.querySelector('summary')?.addEventListener('click', (event) => {
+      // 悬停已打开时，点击钩子不应立即把目录关闭。
+      if (compact.matches && openedByHover && details.open) event.preventDefault();
+    });
+    document.addEventListener('pointerdown', (event) => {
+      if (compact.matches && details && !toc.contains(event.target as Node)) details.open = false;
+    });
+    toc.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && compact.matches && details) {
+        details.open = false;
+        openedByHover = false;
+        details.querySelector('summary')?.focus();
+      }
+    });
     toc.querySelector<HTMLButtonElement>('.toc-collapse')?.addEventListener('click', () => {
       if (!details) return;
       details.open = false;
@@ -78,6 +103,53 @@ for (const heading of Astro.props.headings) {
     const nav = toc.querySelector<HTMLElement>('nav');
     const handle = toc.querySelector<HTMLButtonElement>('.toc-resize');
     if (!nav || !handle) return;
+    const sections = Array.from(nav.querySelectorAll<HTMLAnchorElement>('a[href^="#"]'))
+      .map((link) => ({
+        link,
+        heading: document.getElementById(decodeURIComponent(link.hash.slice(1))),
+      }))
+      .filter((section): section is { link: HTMLAnchorElement; heading: HTMLElement } => !!section.heading);
+    let activeLink: HTMLAnchorElement | undefined;
+    const revealActive = () => {
+      if (!activeLink || !details?.open || nav.clientHeight === 0) return;
+      const bounds = nav.getBoundingClientRect();
+      const linkBounds = activeLink.getBoundingClientRect();
+      if (linkBounds.top < bounds.top + 8) {
+        nav.scrollTop += linkBounds.top - bounds.top - 8;
+      } else if (linkBounds.bottom > bounds.bottom - 8) {
+        nav.scrollTop += linkBounds.bottom - bounds.bottom + 8;
+      }
+    };
+    const syncActive = () => {
+      if (!sections.length) return;
+      let current = sections[0];
+      // 与章节跳转时的顶部留白配合，标题经过阅读区顶部后切换。
+      for (const section of sections) {
+        if (section.heading.getBoundingClientRect().top > 120) break;
+        current = section;
+      }
+      if (window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2) {
+        current = sections[sections.length - 1];
+      }
+      if (current.link === activeLink) return;
+      activeLink?.removeAttribute('aria-current');
+      activeLink = current.link;
+      activeLink.setAttribute('aria-current', 'location');
+      revealActive();
+    };
+    let scrollFrame = 0;
+    const scheduleSync = () => {
+      if (scrollFrame) return;
+      scrollFrame = requestAnimationFrame(() => {
+        scrollFrame = 0;
+        syncActive();
+      });
+    };
+    window.addEventListener('scroll', scheduleSync, { passive: true });
+    window.addEventListener('resize', scheduleSync);
+    details?.addEventListener('toggle', revealActive);
+    new ResizeObserver(revealActive).observe(nav);
+    syncActive();
     let pointerId: number | null = null;
     let startY = 0;
     let startHeight = 0;
@@ -145,9 +217,38 @@ for (const heading of Astro.props.headings) {
     min-height: min(140px, max(80px, calc(100dvh - min(240px, 26vh) - 100px)));
     max-height: max(80px, calc(100dvh - min(240px, 26vh) - 100px));
     overflow-y: auto;
+    padding-right: 10px;
+    scrollbar-gutter: stable;
     margin-top: 10px;
-    scrollbar-width: thin;
+    scrollbar-width: auto;
+    scrollbar-color: auto;
     overscroll-behavior: contain;
+  }
+  nav::-webkit-scrollbar {
+    width: 8px;
+  }
+  nav::-webkit-scrollbar-track {
+    background: var(--c-hover);
+    border-left: 1px solid var(--c-line);
+  }
+  nav::-webkit-scrollbar-thumb {
+    background: #d8c3a5;
+    border: 1px solid #b89e7d;
+    border-radius: 0;
+  }
+  nav::-webkit-scrollbar-thumb:hover {
+    background: #c5ad8d;
+  }
+  nav::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  @supports (-moz-appearance: none) {
+    nav {
+      scrollbar-width: thin;
+      scrollbar-color: #c5ad8d var(--c-hover);
+    }
   }
   .toc-resize {
     display: flex;
@@ -155,7 +256,7 @@ for (const heading of Astro.props.headings) {
     justify-content: center;
     width: 100%;
     height: 18px;
-    margin-top: 4px;
+    margin-top: 12px;
     padding: 0;
     border: 0;
     background: transparent;
@@ -163,12 +264,29 @@ for (const heading of Astro.props.headings) {
     touch-action: none;
   }
   .toc-resize span {
-    width: 32px;
-    height: 5px;
-    border-top: 2px solid var(--c-line);
-    border-bottom: 2px solid var(--c-line);
+    flex: none;
+    width: 24px;
+    height: 10px;
+    background:
+      repeating-linear-gradient(90deg, var(--c-amber) 0 3px, transparent 3px 7px) top / 100% 3px no-repeat,
+      repeating-linear-gradient(90deg, var(--c-orange) 0 3px, transparent 3px 7px) bottom / 100% 3px no-repeat;
   }
-  .toc-resize:hover span { border-color: var(--c-orange); }
+  .toc-resize::before,
+  .toc-resize::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    margin: 0 10px;
+    background: var(--c-line);
+  }
+  .toc-resize:hover,
+  .toc-resize:active {
+    background: var(--c-hover);
+  }
+  .toc-resize:focus-visible {
+    outline: 1px solid var(--c-orange);
+    outline-offset: 2px;
+  }
   ul, li {
     list-style: none;
     margin: 0;
@@ -193,6 +311,13 @@ for (const heading of Astro.props.headings) {
     text-decoration: underline;
     text-underline-offset: 3px;
   }
+  a[aria-current='location'] {
+    background: var(--c-hover);
+    box-shadow: inset 2px 0 #b89e7d;
+    padding-left: 7px;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
   @media (min-width: 1000px) and (max-width: 1199px) {
     .article-toc {
       right: calc(50% + var(--w-page) / 2 + 24px);
@@ -202,10 +327,39 @@ for (const heading of Astro.props.headings) {
   }
   @media (max-width: 999px) {
     .article-toc {
-      left: 8px;
+      left: 0;
       right: auto;
-      width: 46px;
-      padding: 10px 8px;
+      width: 24px;
+      padding: 0;
+      border-left: 0;
+    }
+    .article-toc:not(:has(details[open])) {
+      border-color: #d8c3a5;
+      border-right-color: #b89e7d;
+      background: var(--c-panel);
+      clip-path: polygon(0 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%, 0 100%);
+    }
+    .article-toc:not(:has(details[open])) summary {
+      height: 44px;
+      align-items: center;
+    }
+    .article-toc:not(:has(details[open])) summary::after {
+      content: '';
+      width: 12px;
+      height: 14px;
+      background: repeating-linear-gradient(
+        to bottom,
+        var(--c-orange-dark) 0 2px,
+        transparent 2px 6px
+      );
+    }
+    .article-toc:not(:has(details[open])) .toc-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
     summary {
       display: flex;
